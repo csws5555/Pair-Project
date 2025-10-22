@@ -6,20 +6,53 @@ class User(AbstractUser):
         ('customer', 'Customer'),
         ('admin', 'Admin'),
     ]
-    
+
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+        ('N', 'Prefer not to say'),
+    ]
+
+    INCOME_CHOICES = [
+        ('LOW', 'Less than $25,000'),
+        ('LOWER_MIDDLE', '$25,000 - $49,999'),
+        ('MIDDLE', '$50,000 - $74,999'),
+        ('UPPER_MIDDLE', '$75,000 - $99,999'),
+        ('HIGH', '$100,000 - $149,999'),
+        ('VERY_HIGH', '$150,000+'),
+    ]
+
+    EMPLOYMENT_CHOICES = [
+        ('EMPLOYED_FULL', 'Employed Full-Time'),
+        ('EMPLOYED_PART', 'Employed Part-Time'),
+        ('SELF_EMPLOYED', 'Self-Employed'),
+        ('UNEMPLOYED', 'Unemployed'),
+        ('STUDENT', 'Student'),
+        ('RETIRED', 'Retired'),
+    ]
+
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default='customer')
-    phone = models.CharField(max_length=15, blank=True, null=True)
-    
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+
     # Demographics for ML
     age = models.IntegerField(blank=True, null=True)
-    gender = models.CharField(max_length=10, blank=True, null=True)
-    employment_status = models.CharField(max_length=50, blank=True, null=True)
-    income_range = models.CharField(max_length=50, blank=True, null=True)
-    predicted_category = models.CharField(max_length=100, blank=True, null=True)
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
+    employment_status = models.CharField(max_length=50, choices=EMPLOYMENT_CHOICES, blank=True, null=True)
+    income_level = models.CharField(max_length=50, choices=INCOME_CHOICES, blank=True, null=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    predicted_category = models.ForeignKey(
+        'products.Category',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='predicted_users',
+        help_text='ML-predicted preferred category for personalization'
+    )
     
     class Meta:
         db_table = 'users'

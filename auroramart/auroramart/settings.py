@@ -66,6 +66,8 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
+                'apps.products.context_processors.global_context',
+                'apps.cart.context_processors.cart_context',
             ],
         },
     },
@@ -158,3 +160,17 @@ REST_FRAMEWORK = {
 
 # ML Models Path
 ML_MODELS_DIR = BASE_DIR / 'ml_models'
+
+# Email configuration (for development - use console backend)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@yourstore.com'
+
+# For production, use SMTP:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your-email@gmail.com'
+# EMAIL_HOST_PASSWORD = 'your-app-password'
+
+SITE_URL = 'http://localhost:8000'  # Change in production

@@ -10,7 +10,7 @@ class UserBrowsingHistory(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name='browsing_history'
+        related_name='recommendation_browsing_history'
     )
     product = models.ForeignKey(
         Product,

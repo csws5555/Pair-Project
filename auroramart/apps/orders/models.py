@@ -3,6 +3,9 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from apps.products.models import Product
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class Order(models.Model):
@@ -235,3 +238,29 @@ class Address(models.Model):
         address += f"{self.city}, {self.state} {self.postal_code}\n"
         address += f"{self.country}"
         return address
+    
+class StockMovement(models.Model):
+    MOVEMENT_TYPE_CHOICES = [
+        ('sale', 'Sale'),
+        ('return', 'Return'),
+        ('restock', 'Restock'),
+        ('adjustment', 'Adjustment'),
+        ('damaged', 'Damaged'),
+    ]
+    
+    product = models.ForeignKey('products.Product', on_delete=models.CASCADE, related_name='order_stock_movements')
+    quantity = models.IntegerField()  # Negative for outgoing, positive for incoming
+    movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPE_CHOICES)
+    reference_number = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['product', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.quantity} ({self.movement_type})"
