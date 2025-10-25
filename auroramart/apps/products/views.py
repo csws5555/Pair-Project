@@ -1,12 +1,17 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView
-from django.db.models import Q, Prefetch, Count, Avg
+from django.db.models import Q, Prefetch, Count, Avg, F
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator
 from django.contrib import messages
 from .models import Product, Category, ProductImage, BrowsingHistory
 from .filters import ProductFilter
+from apps.core.recommendation_utils import (
+    get_category_prediction,
+    get_frequently_bought_together,
+    get_contextual_recommendations
+)
 import random
 
 
@@ -133,8 +138,14 @@ class CategoryBrowseView(ListView):
         
         # Get products from this category and its subcategories
         categories = [self.category]
-        categories.extend(self.category.get_descendants())
-        
+        # Get all child categories recursively
+        def get_children(cat):
+            children = list(Category.objects.filter(parent=cat, is_active=True))
+            for child in children:
+                children.extend(get_children(child))
+            return children
+        categories.extend(get_children(self.category))
+
         queryset = Product.objects.filter(
             category__in=categories,
             is_active=True
@@ -170,29 +181,17 @@ class CategoryBrowseView(ListView):
             is_active=True
         )
         
-        # Recommended products for logged-in users (ML-based)
+        # =============================================================================
+        # ML INTEGRATION POINT - Phase 10
+        # Current: Using fallback contextual recommendations
+        # TODO Phase 10: Use ML contextual recommendations
+        # =============================================================================
         if self.request.user.is_authenticated:
-            # Placeholder for ML recommendations
-            # TODO: Integrate with ML model
-            recommended_ids = self._get_ml_recommendations()
-            context['recommended_products'] = Product.objects.filter(
-                id__in=recommended_ids,
-                is_active=True
-            ).select_related('category').prefetch_related('images')[:6]
-        
+            # Get viewed products from session
+            viewed_products = self.request.session.get('viewed_products', [])
+            context['recommended_products'] = get_contextual_recommendations(viewed_products)
+
         return context
-    
-    def _get_ml_recommendations(self):
-        """Get ML-based product recommendations"""
-        # Placeholder: Return random products from same category
-        # This will be replaced with actual ML predictions
-        products = Product.objects.filter(
-            category=self.category,
-            is_active=True
-        ).values_list('id', flat=True)
-        product_list = list(products)
-        random.shuffle(product_list)
-        return product_list[:6]
 
 
 class ProductDetailView(DetailView):
@@ -230,36 +229,37 @@ class ProductDetailView(DetailView):
         # Specifications
         context['specifications'] = product.specifications.all()
         
-        # Breadcrumb navigation
-        context['breadcrumbs'] = product.category.get_ancestors(include_self=True)
-        
-        # Frequently bought together (OS-003)
-        context['frequently_bought_together'] = self._get_frequently_bought_together(product)
-        
+        # Breadcrumb navigation (placeholder - needs proper implementation)
+        # context['breadcrumbs'] = product.category.get_ancestors(include_self=True)
+
+        # =============================================================================
+        # ML INTEGRATION POINT - Phase 10
+        # Current: Using fallback FBT recommendations
+        # TODO Phase 10: Use ML association rules for FBT
+        # =============================================================================
+        context['frequently_bought_together'] = get_frequently_bought_together(product)
+
         # Related products (same category)
         context['related_products'] = Product.objects.filter(
             category=product.category,
             is_active=True
         ).exclude(id=product.id).select_related('category').prefetch_related('images')[:8]
-        
-        # Track browsing history for logged-in users
+
+        # Track browsing history
         if self.request.user.is_authenticated:
             BrowsingHistory.objects.create(
                 user=self.request.user,
                 product=product
             )
-        
+
+        # Track in session for contextual recommendations
+        viewed_products = self.request.session.get('viewed_products', [])
+        if product.id not in viewed_products:
+            viewed_products.append(product.id)
+            viewed_products = viewed_products[-50:]  # Keep last 50
+            self.request.session['viewed_products'] = viewed_products
+
         return context
-    
-    def _get_frequently_bought_together(self, product):
-        """Get frequently bought together products using ML association rules"""
-        # Placeholder for ML-based recommendations
-        # TODO: Integrate with ML association rule mining
-        # For now, return random products from same category
-        return Product.objects.filter(
-            category=product.category,
-            is_active=True
-        ).exclude(id=product.id).select_related('category').prefetch_related('images')[:3]
 
 
 class ProductSearchView(ListView):
@@ -315,14 +315,13 @@ class ProductSearchView(ListView):
         pass
 
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from django.db.models import Q
 from django.contrib import messages
-from django.shortcuts import redirect
 from django.views import View
 from .models import Product, ProductImage, ProductSpecification
 from .forms import ProductForm, ProductImageFormSet, ProductSpecificationFormSet
+from django import forms as django_forms
 
 class AdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -366,7 +365,7 @@ class ProductListView(AdminRequiredMixin, ListView):
         stock_status = self.request.GET.get('stock_status', '')
         if stock_status == 'low':
             queryset = queryset.filter(
-                stock__lte=models.F('reorder_threshold'),
+                stock__lte=F('reorder_threshold'),
                 stock__gt=0
             )
         elif stock_status == 'out':
@@ -682,10 +681,10 @@ class InventoryDashboardView(AdminRequiredMixin, ListView):
         # Filter by stock status
         stock_status = self.request.GET.get('stock_status', '')
         if stock_status == 'adequate':
-            queryset = queryset.filter(stock__gt=models.F('reorder_threshold'))
+            queryset = queryset.filter(stock__gt=F('reorder_threshold'))
         elif stock_status == 'low':
             queryset = queryset.filter(
-                stock__lte=models.F('reorder_threshold'),
+                stock__lte=F('reorder_threshold'),
                 stock__gt=0
             )
         elif stock_status == 'out':
@@ -709,10 +708,10 @@ class InventoryDashboardView(AdminRequiredMixin, ListView):
         # Summary statistics
         all_products = Product.objects.filter(is_active=True)
         context['adequate_stock'] = all_products.filter(
-            stock__gt=models.F('reorder_threshold')
+            stock__gt=F('reorder_threshold')
         ).count()
         context['low_stock'] = all_products.filter(
-            stock__lte=models.F('reorder_threshold'),
+            stock__lte=F('reorder_threshold'),
             stock__gt=0
         ).count()
         context['out_of_stock'] = all_products.filter(stock=0).count()

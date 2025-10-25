@@ -10,12 +10,17 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
 
+    # =============================================================================
+    # ML INTEGRATION POINT - Phase 10
+    # Current: Recommendations URL commented out
+    # TODO Phase 10: Uncomment recommendations URL and implement ML endpoints
+    # =============================================================================
     path('admin-panel/', include('apps.customers.urls', namespace='admin_panel')),
     path('admin-panel/analytics/', include('apps.analytics.urls', namespace='analytics')),
     path('api/products/', include('apps.products.api_urls', namespace='products_api')),
     path('orders/', include('apps.orders.urls', namespace='orders')),
     path('cart/', include('apps.cart.urls', namespace='cart')),
-    path('api/', include('apps.recommendations.urls', namespace='api')),
+    # path('api/', include('apps.recommendations.urls', namespace='api')),  # Phase 10
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('', include('apps.products.urls', namespace='storefront')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

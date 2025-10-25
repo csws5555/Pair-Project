@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'apps.cart',
     'apps.customers',
     'apps.analytics',
-    'apps.recommendations',
+    # 'apps.recommendations',  # Will be added in Phase 10 (ML Integration)
     'apps.core',
 ]
 
