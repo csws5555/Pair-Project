@@ -1,10 +1,10 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.views.generic import TemplateView
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, F
 from django.utils import timezone
 from datetime import timedelta
 from apps.products.models import Product
-from apps.customers.models import Customer
+from apps.customers.models import CustomerProfile
 from apps.orders.models import Order
 
 class AdminDashboardView(UserPassesTestMixin, TemplateView):
@@ -20,20 +20,20 @@ class AdminDashboardView(UserPassesTestMixin, TemplateView):
         products = Product.objects.filter(is_active=True)
         context['total_products'] = products.count()
         context['low_stock_count'] = products.filter(
-            stock_quantity__lte=models.F('reorder_threshold'),
-            stock_quantity__gt=0
+            stock__lte=F('reorder_threshold'),
+            stock__gt=0
         ).count()
-        context['out_of_stock_count'] = products.filter(stock_quantity=0).count()
-        
+        context['out_of_stock_count'] = products.filter(stock=0).count()
+
         # Low stock alerts with color coding
         context['low_stock_products'] = products.filter(
-            stock_quantity__lte=models.F('reorder_threshold')
-        ).select_related('category').order_by('stock_quantity')[:10]
+            stock__lte=F('reorder_threshold')
+        ).select_related('category').order_by('stock')[:10]
         
         # Customer metrics
         thirty_days_ago = timezone.now() - timedelta(days=30)
-        context['total_customers'] = Customer.objects.filter(user__is_active=True).count()
-        context['new_customers_this_month'] = Customer.objects.filter(
+        context['total_customers'] = CustomerProfile.objects.filter(user__is_active=True).count()
+        context['new_customers_this_month'] = CustomerProfile.objects.filter(
             user__date_joined__gte=thirty_days_ago
         ).count()
         

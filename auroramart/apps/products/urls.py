@@ -2,10 +2,16 @@
 Products App URL Configuration
 Storefront browsing routes
 """
-from django.urls import path
 from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .api_views import CategoryViewSet, ProductViewSet
 
-app_name = 'storefront'
+app_name = 'products'
+
+router = DefaultRouter()
+router.register(r'categories', CategoryViewSet, basename='category')
+router.register(r'products', ProductViewSet, basename='product')
 
 urlpatterns = [
     # Homepage
@@ -40,4 +46,6 @@ urlpatterns = [
     path('admin/inventory/<int:pk>/adjust/', views.StockAdjustmentView.as_view(), name='admin_stock_adjust'),
     path('admin/inventory/<int:pk>/threshold/', views.ReorderThresholdUpdateView.as_view(), name='admin_reorder_threshold'),
     path('admin/inventory/report/', views.InventoryReportView.as_view(), name='admin_inventory_report'),
+
+    path('', include(router.urls)),
 ]

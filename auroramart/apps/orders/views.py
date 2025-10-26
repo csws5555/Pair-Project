@@ -109,10 +109,10 @@ class ShippingAddressView(CheckoutBaseView):
             )
             
             address_data = {
-                'full_name': address.full_name,
-                'phone': address.phone,
-                'address_line1': address.address_line1,
-                'address_line2': address.address_line2,
+                'name': address.name,
+                'phone': getattr(address, 'phone', ''),
+                'line1': address.line1,
+                'line2': address.line2,
                 'city': address.city,
                 'state': address.state,
                 'postal_code': address.postal_code,
@@ -137,10 +137,10 @@ class ShippingAddressView(CheckoutBaseView):
             if form.is_valid():
                 # Save address data to session
                 address_data = {
-                    'full_name': form.cleaned_data['full_name'],
+                    'name': form.cleaned_data['name'],
                     'phone': form.cleaned_data['phone'],
-                    'address_line1': form.cleaned_data['address_line1'],
-                    'address_line2': form.cleaned_data['address_line2'],
+                    'line1': form.cleaned_data['line1'],
+                    'line2': form.cleaned_data['line2'],
                     'city': form.cleaned_data['city'],
                     'state': form.cleaned_data['state'],
                     'postal_code': form.cleaned_data['postal_code'],
@@ -241,10 +241,10 @@ class PaymentMethodView(CheckoutBaseView):
             # Store billing address if different
             if billing_form:
                 billing_data = {
-                    'full_name': billing_form.cleaned_data['full_name'],
+                    'name': billing_form.cleaned_data['name'],
                     'phone': billing_form.cleaned_data['phone'],
-                    'address_line1': billing_form.cleaned_data['address_line1'],
-                    'address_line2': billing_form.cleaned_data['address_line2'],
+                    'line1': billing_form.cleaned_data['line1'],
+                    'line2': billing_form.cleaned_data['line2'],
                     'city': billing_form.cleaned_data['city'],
                     'state': billing_form.cleaned_data['state'],
                     'postal_code': billing_form.cleaned_data['postal_code'],
@@ -362,30 +362,28 @@ class PlaceOrderView(CheckoutBaseView):
                     tax=tax,
                     shipping_cost=shipping,
                     total=total,
-                    
+
                     # Shipping address
-                    shipping_full_name=checkout_session['shipping_address']['full_name'],
-                    shipping_phone=checkout_session['shipping_address']['phone'],
-                    shipping_address_line1=checkout_session['shipping_address']['address_line1'],
-                    shipping_address_line2=checkout_session['shipping_address'].get('address_line2', ''),
+                    shipping_name=checkout_session['shipping_address']['name'],
+                    shipping_line1=checkout_session['shipping_address']['line1'],
+                    shipping_line2=checkout_session['shipping_address'].get('line2', ''),
                     shipping_city=checkout_session['shipping_address']['city'],
                     shipping_state=checkout_session['shipping_address']['state'],
                     shipping_postal_code=checkout_session['shipping_address']['postal_code'],
                     shipping_country=checkout_session['shipping_address']['country'],
-                    
+
                     # Billing address
-                    billing_full_name=checkout_session['billing_address']['full_name'],
-                    billing_phone=checkout_session['billing_address']['phone'],
-                    billing_address_line1=checkout_session['billing_address']['address_line1'],
-                    billing_address_line2=checkout_session['billing_address'].get('address_line2', ''),
+                    billing_name=checkout_session['billing_address']['name'],
+                    billing_line1=checkout_session['billing_address']['line1'],
+                    billing_line2=checkout_session['billing_address'].get('line2', ''),
                     billing_city=checkout_session['billing_address']['city'],
                     billing_state=checkout_session['billing_address']['state'],
                     billing_postal_code=checkout_session['billing_address']['postal_code'],
                     billing_country=checkout_session['billing_address']['country'],
-                    
+
                     # Payment method (masked)
                     payment_method=checkout_session['payment_method']['card_type'],
-                    payment_details=f"**** **** **** {checkout_session['payment_method']['card_last4']}"
+                    payment_transaction_id=f"**** **** **** {checkout_session['payment_method']['card_last4']}"
                 )
                 
                 # Create order items (snapshot product data)
@@ -412,8 +410,7 @@ class PlaceOrderView(CheckoutBaseView):
                     
                     # Update product stock
                     product.stock -= cart_item.quantity
-                    product.sales_count += cart_item.quantity
-                    product.save(update_fields=['stock', 'sales_count'])
+                    product.save(update_fields=['stock'])
                     
                     # Create stock movement record
                     StockMovement.objects.create(
@@ -506,10 +503,9 @@ class PlaceOrderView(CheckoutBaseView):
         Address.objects.create(
             user=user,
             address_type=address_type,
-            full_name=address_data['full_name'],
-            phone=address_data['phone'],
-            address_line1=address_data['address_line1'],
-            address_line2=address_data.get('address_line2', ''),
+            name=address_data['name'],
+            line1=address_data['line1'],
+            line2=address_data.get('line2', ''),
             city=address_data['city'],
             state=address_data['state'],
             postal_code=address_data['postal_code'],

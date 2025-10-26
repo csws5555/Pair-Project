@@ -5,6 +5,15 @@ Authentication and user profile routes
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from .api_views import (
+    UserRegistrationView,
+    UserLoginView,
+    UserLogoutView,
+    UserProfileView,
+    ChangePasswordView,
+    UserDeleteView,
+    UserStatsView
+)
 
 app_name = 'accounts'
 
@@ -31,6 +40,9 @@ urlpatterns = [
     # Order History URL
     path('profile/orders/', views.OrderHistoryView.as_view(), name='order_history'),
     path('profile/orders/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
+
+    # User Statistics
+    path('stats/', UserStatsView.as_view(), name='stats'),
 
     
 ]

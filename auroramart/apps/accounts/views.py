@@ -16,7 +16,7 @@ from django.db.models import Q
 
 from .forms import CustomUserCreationForm, UserUpdateForm, AddressForm
 from apps.orders.models import Order, Address
-from apps.recommendations.services import CategoryPredictionService
+# from apps.recommendations.services import CategoryPredictionService  # Phase 10: ML Integration
 
 
 class RegisterView(CreateView):
@@ -49,22 +49,25 @@ class RegisterView(CreateView):
         login(self.request, user)
         messages.success(self.request, f'Welcome to AuroraMart, {user.first_name}!')
         
-        # Trigger ML prediction for preferred category (async recommended in production)
-        try:
-            prediction_service = CategoryPredictionService()
-            predicted_category = prediction_service.predict_preferred_category(user)
-            
-            if predicted_category:
-                # Store prediction in session for personalized landing
-                self.request.session['predicted_category'] = predicted_category.slug
-                messages.info(
-                    self.request,
-                    f'Based on your profile, we think you might love our {predicted_category.name} collection!'
-                )
-                return redirect('storefront:personalized_category')
-        except Exception as e:
-            # Log error but don't break registration flow
-            print(f"Category prediction error: {e}")
+        # =============================================================================
+        # ML INTEGRATION POINT - Phase 10
+        # TODO: Trigger ML prediction for preferred category (async recommended in production)
+        # =============================================================================
+        # try:
+        #     prediction_service = CategoryPredictionService()
+        #     predicted_category = prediction_service.predict_preferred_category(user)
+        #
+        #     if predicted_category:
+        #         # Store prediction in session for personalized landing
+        #         self.request.session['predicted_category'] = predicted_category.slug
+        #         messages.info(
+        #             self.request,
+        #             f'Based on your profile, we think you might love our {predicted_category.name} collection!'
+        #         )
+        #         return redirect('storefront:personalized_category')
+        # except Exception as e:
+        #     # Log error but don't break registration flow
+        #     print(f"Category prediction error: {e}")
         
         return redirect(self.success_url)
 

@@ -22,7 +22,15 @@ urlpatterns = [
     path('cart/', include('apps.cart.urls', namespace='cart')),
     # path('api/', include('apps.recommendations.urls', namespace='api')),  # Phase 10
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
-    path('', include('apps.products.urls', namespace='storefront')),
+    path('', include('apps.products.urls', namespace='products')),
+    path('', include('apps.core.urls')),
+    
+    # API endpoints (all prefixed with /api/)
+    path('api/', include('apps.core.api_urls')),
+    
+    # Web app URLs
+    path('', include('apps.products.urls')),
+    path('', include('apps.core.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Serve media files in development

@@ -2,10 +2,15 @@
 Cart App URL Configuration
 Shopping cart management routes
 """
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .api_views import CartViewSet
 from . import views
 
 app_name = 'cart'
+
+router = DefaultRouter()
+router.register(r'cart', CartViewSet, basename='cart')
 
 urlpatterns = [
     # Cart actions
@@ -18,4 +23,6 @@ urlpatterns = [
     
     # AJAX endpoints
     path('api/count/', views.CartCountView.as_view(), name='cart_count'),
+
+    path('', include(router.urls)),
 ]

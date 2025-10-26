@@ -37,10 +37,9 @@ class HomeView(ListView):
         
         # Top rated products
         context['top_rated'] = Product.objects.filter(
-            is_active=True
-        ).annotate(
-            avg_rating=Avg('reviews__rating')
-        ).filter(avg_rating__gte=4.0).select_related('category').prefetch_related('images')[:8]
+            is_active=True,
+            rating__gte=4.0
+        ).select_related('category').prefetch_related('images').order_by('-rating', '-review_count')[:8]
         
         # Category quick links
         context['categories'] = Category.objects.filter(
@@ -98,10 +97,10 @@ class PersonalizedCategoryView(ListView):
         
         # Apply sorting
         sort_by = self.request.GET.get('sort', '-created_at')
-        valid_sorts = ['price', '-price', 'name', '-name', '-created_at', 'rating']
+        valid_sorts = ['price', '-price', 'name', '-name', '-created_at', 'rating', '-rating']
         if sort_by in valid_sorts:
             if sort_by == 'rating':
-                queryset = queryset.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
+                queryset = queryset.order_by('-rating', '-review_count')
             else:
                 queryset = queryset.order_by(sort_by)
         
@@ -157,10 +156,10 @@ class CategoryBrowseView(ListView):
         
         # Apply sorting
         sort_by = self.request.GET.get('sort', '-created_at')
-        valid_sorts = ['price', '-price', 'name', '-name', '-created_at', 'rating']
+        valid_sorts = ['price', '-price', 'name', '-name', '-created_at', 'rating', '-rating']
         if sort_by in valid_sorts:
             if sort_by == 'rating':
-                queryset = queryset.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
+                queryset = queryset.order_by('-rating', '-review_count')
             else:
                 queryset = queryset.order_by(sort_by)
         
@@ -206,8 +205,7 @@ class ProductDetailView(DetailView):
             is_active=True
         ).select_related('category').prefetch_related(
             'images',
-            'specifications',
-            'reviews'
+            'specifications'
         )
     
     def get_context_data(self, **kwargs):
@@ -218,9 +216,8 @@ class ProductDetailView(DetailView):
         context['images'] = product.images.all()
         
         # Average rating and review count
-        reviews = product.reviews.all()
-        context['review_count'] = reviews.count()
-        context['average_rating'] = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+        context['review_count'] = product.review_count
+        context['average_rating'] = product.rating
         
         # Stock status
         context['in_stock'] = product.stock > 0
@@ -288,10 +285,10 @@ class ProductSearchView(ListView):
         
         # Apply sorting
         sort_by = self.request.GET.get('sort', '-created_at')
-        valid_sorts = ['price', '-price', 'name', '-name', '-created_at', 'rating']
+        valid_sorts = ['price', '-price', 'name', '-name', '-created_at', 'rating', '-rating']
         if sort_by in valid_sorts:
             if sort_by == 'rating':
-                queryset = queryset.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
+                queryset = queryset.order_by('-rating', '-review_count')
             else:
                 queryset = queryset.order_by(sort_by)
         

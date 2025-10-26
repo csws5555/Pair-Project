@@ -2,10 +2,16 @@
 Orders App URL Configuration
 Checkout and order management routes
 """
-from django.urls import path
 from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .api_views import OrderViewSet, AddressViewSet
 
 app_name = 'orders'
+
+router = DefaultRouter()
+router.register(r'orders', OrderViewSet, basename='order')
+router.register(r'addresses', AddressViewSet, basename='address')
 
 urlpatterns = [
     # Checkout flow
@@ -20,4 +26,6 @@ urlpatterns = [
     
     # Order tracking (for customers)
     path('track/<str:order_number>/', views.OrderTrackingView.as_view(), name='order_tracking'),
+
+    path('', include(router.urls)),
 ]
