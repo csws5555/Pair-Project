@@ -3,9 +3,9 @@ from django.views.generic import TemplateView
 from django.db.models import Count, Sum, Q, F
 from django.utils import timezone
 from datetime import timedelta
-from apps.products.models import Product
-from apps.customers.models import CustomerProfile
-from apps.orders.models import Order
+from apps.storefront.models import Product
+from apps.storefront.models import CustomerProfile
+from apps.storefront.models import Order
 
 class AdminDashboardView(UserPassesTestMixin, TemplateView):
     template_name = 'admin_panel/dashboard.html'

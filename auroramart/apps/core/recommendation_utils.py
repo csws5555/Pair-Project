@@ -6,7 +6,7 @@ Phase 10: Enhanced with ML models
 This module provides a unified interface for recommendations throughout the app.
 Phase 10 will replace the internal logic with ML while keeping the same interface.
 """
-from apps.products.models import Product, Category
+from apps.storefront.models import Product, Category
 from django.db.models import Count
 import logging
 
@@ -187,106 +187,3 @@ def get_personalized_homepage_products(user, limit=8):
         is_active=True
     ).order_by('-rating')[:limit]
 
-# =============================================================================
-# RECOMMENDATION FALLBACK UTILITIES
-# Phase 3: Simple rule-based recommendations
-# Phase 10: Replace with ML-powered recommendations
-# =============================================================================
-
-def get_category_prediction_fallback(user):
-    """
-    Phase 3: Return None or most popular category
-    Phase 10: Call ML prediction model
-    
-    Args:
-        user: User instance
-        
-    Returns:
-        str: Category name or None
-    """
-    if hasattr(user, 'predicted_category') and user.predicted_category:
-        return user.predicted_category
-    
-    # Fallback: most popular category
-    from django.db.models import Count
-    from apps.products.models import Category
-    
-    popular = Category.objects.annotate(
-        product_count=Count('products')
-    ).order_by('-product_count').first()
-    
-    return popular.name if popular else None
-
-
-def get_frequently_bought_together_fallback(product, limit=3):
-    """
-    Phase 3: Return related products from same category
-    Phase 10: Use ML association rules
-    
-    Args:
-        product: Product instance
-        limit: Number of recommendations to return
-        
-    Returns:
-        QuerySet: Recommended products
-    """
-    from apps.products.models import Product
-    
-    return Product.objects.filter(
-        category=product.category,
-        is_active=True
-    ).exclude(id=product.id).order_by('-rating')[:limit]
-
-
-def get_cart_recommendations_fallback(cart_items, limit=4):
-    """
-    Phase 3: Return complementary products from cart categories
-    Phase 10: Use ML cart recommendations
-    
-    Args:
-        cart_items: QuerySet of CartItem instances
-        limit: Number of recommendations to return
-        
-    Returns:
-        QuerySet: Recommended products
-    """
-    from apps.products.models import Product
-    
-    categories = cart_items.values_list('product__category', flat=True).distinct()
-    cart_product_ids = cart_items.values_list('product_id', flat=True)
-    
-    return Product.objects.filter(
-        category__in=categories,
-        is_active=True
-    ).exclude(id__in=cart_product_ids).order_by('-rating')[:limit]
-
-
-def get_contextual_recommendations_fallback(viewed_products, limit=6):
-    """
-    Phase 3: Return trending products or products from viewed categories
-    Phase 10: Use ML contextual recommendations
-    
-    Args:
-        viewed_products: List of product IDs
-        limit: Number of recommendations to return
-        
-    Returns:
-        QuerySet: Recommended products
-    """
-    from apps.products.models import Product
-    
-    if not viewed_products:
-        # Return trending products
-        return Product.objects.filter(
-            is_active=True
-        ).order_by('-rating', '-review_count')[:limit]
-    
-    # Get categories from viewed products
-    categories = Product.objects.filter(
-        id__in=viewed_products
-    ).values_list('category', flat=True).distinct()
-    
-    return Product.objects.filter(
-        category__in=categories,
-        is_active=True
-    ).exclude(id__in=viewed_products).order_by('-rating')[:limit]

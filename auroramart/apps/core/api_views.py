@@ -3,14 +3,14 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 
-from apps.products.models import Product
-from apps.cart.models import Cart
-from apps.products.serializers import ProductListSerializer
+from apps.storefront.models import Product
+from apps.storefront.models import Cart
+from apps.storefront.serializers.products import ProductListSerializer
 from .recommendation_utils import (
-    get_category_prediction_fallback,
-    get_frequently_bought_together_fallback,
-    get_cart_recommendations_fallback,
-    get_contextual_recommendations_fallback
+    get_category_prediction,
+    get_frequently_bought_together,
+    get_cart_recommendations,
+    get_contextual_recommendations
 )
 
 
@@ -30,8 +30,8 @@ class CategoryPredictionView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        prediction = get_category_prediction_fallback(request.user)
-        
+        prediction = get_category_prediction(request.user)
+
         return Response({
             'predicted_category': prediction,
             'source': 'fallback',  # Phase 10: change to 'ml'
@@ -58,8 +58,8 @@ class ProductRecommendationsView(APIView):
         
         try:
             product = Product.objects.get(id=product_id)
-            recommendations = get_frequently_bought_together_fallback(product)
-            
+            recommendations = get_frequently_bought_together(product)
+
             serializer = ProductListSerializer(recommendations, many=True)
             return Response({
                 'products': serializer.data,
@@ -91,8 +91,8 @@ class CartRecommendationsView(APIView):
                 'products': [],
                 'message': 'Add items to cart for recommendations'
             })
-        
-        recommendations = get_cart_recommendations_fallback(cart_items)
+
+        recommendations = get_cart_recommendations(cart_items)
         
         serializer = ProductListSerializer(recommendations, many=True)
         return Response({
@@ -113,8 +113,8 @@ class ContextualRecommendationsView(APIView):
     def get(self, request):
         # Get recently viewed products from session
         viewed_products = request.session.get('viewed_products', [])[-10:]
-        
-        recommendations = get_contextual_recommendations_fallback(viewed_products)
+
+        recommendations = get_contextual_recommendations(viewed_products)
         
         serializer = ProductListSerializer(recommendations, many=True)
         return Response({

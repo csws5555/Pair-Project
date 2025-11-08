@@ -24,21 +24,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third-party apps
     'rest_framework',
     'django_filters',
-    
-    # Local apps
-    'apps.accounts',
-    'apps.products',
-    'apps.inventory',
-    'apps.orders',
-    'apps.cart',
-    'apps.customers',
-    'apps.analytics',
-    # 'apps.recommendations',  # Will be added in Phase 10 (ML Integration)
-    'apps.core',
+
+    # AuroraMart apps
+    'apps.core',           # Must be first (contains User model)
+    'apps.storefront',     # Customer-facing app
+    'apps.adminpanel',     # Admin-facing app
 ]
 
 MIDDLEWARE = [
@@ -66,8 +60,6 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
-                'apps.products.context_processors.global_context',
-                'apps.cart.context_processors.cart_context',
             ],
         },
     },
@@ -88,7 +80,7 @@ DATABASES = {
 }
 
 # Custom User Model
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'core.User'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
